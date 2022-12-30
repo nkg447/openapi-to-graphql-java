@@ -1,4 +1,6 @@
-package dev.nikunjgupta;
+package dev.nikunjgupta.provider;
+
+import dev.nikunjgupta.Util;
 
 import java.util.HashMap;
 import java.util.Map;

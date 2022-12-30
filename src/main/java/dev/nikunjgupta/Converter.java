@@ -1,101 +1,38 @@
 package dev.nikunjgupta;
 
-import graphql.Scalars;
-import graphql.scalars.ExtendedScalars;
+import dev.nikunjgupta.converter.GraphQlTypeConverter;
+import dev.nikunjgupta.provider.SchemaProvider;
+import dev.nikunjgupta.provider.UniqueNameProvider;
 import graphql.schema.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
 
 public class Converter {
-    private static final Map<String, GraphQLType> SCHEMA_TO_GRAPHQL_TYPE_MAP =
-            new HashMap<>();
-
-    static {
-        SCHEMA_TO_GRAPHQL_TYPE_MAP.put("integer", Scalars.GraphQLInt);
-        SCHEMA_TO_GRAPHQL_TYPE_MAP.put("number", Scalars.GraphQLFloat);
-        SCHEMA_TO_GRAPHQL_TYPE_MAP.put("string", Scalars.GraphQLString);
-        SCHEMA_TO_GRAPHQL_TYPE_MAP.put("boolean", Scalars.GraphQLBoolean);
-    }
-
-    private final Map<Schema, GraphQLType> graphQlTypes = new HashMap<>();
     private final OpenAPI openAPI;
-    private final Map<String, Integer> uniqueNameRecords = new HashMap<>();
+    private final SchemaProvider schemaProvider;
+    private final UniqueNameProvider uniqueNameProvider;
+    private final GraphQlTypeConverter graphQlTypeConverter;
 
     public Converter(OpenAPI openAPI) {
         this.openAPI = openAPI;
-    }
-
-    private GraphQLOutputType getGraphQlOutputType(Schema schema) {
-        return (GraphQLOutputType) getGraphQlType(schema);
-    }
-
-    private GraphQLInputType getGraphQlInputType(Schema schema) {
-        return (GraphQLInputType) getGraphQlType(schema, null);
-    }
-
-    private GraphQLInputType getGraphQlInputType(Schema schema, String defaultName) {
-        GraphQLType type = getGraphQlType(schema, defaultName);
-        if(type instanceof GraphQLInputType)
-            return (GraphQLInputType) type;
-        return null;
-    }
-
-    private GraphQLType getGraphQlType(Schema schema) {
-        return getGraphQlType(schema, null);
-    }
-
-    private GraphQLType getGraphQlType(Schema schema, String defaultName) {
-        if (schema.getType() == null && schema.get$ref() != null) {
-            // get actual schema object from the reference
-            schema = getActualSchemaObject(schema);
-            return getGraphQlType(schema, defaultName);
-        }
-        if (schema.getType().equals("array")) {
-            ArraySchema arraySchema = (ArraySchema) schema;
-            Schema arrayItemSchema = arraySchema.getItems();
-            GraphQLType arrayItemGraphQlType = getGraphQlType(arrayItemSchema, defaultName);
-            return GraphQLList.list(arrayItemGraphQlType);
-        }
-        if (schema.getType().equals("object")) {
-            if (!graphQlTypes.containsKey(schema)) {
-                if (schema instanceof ObjectSchema)
-                    graphQlTypes.put(schema, convertToGraphQLObjectType(schema.getName(),
-                            (ObjectSchema) schema));
-                else
-                    graphQlTypes.put(schema, ExtendedScalars.Object);
-            }
-            return graphQlTypes.get(schema);
-        }
-
-        if (schema.getEnum() != null) {
-            GraphQLEnumType.Builder gqlEnumBuilder = GraphQLEnumType.newEnum()
-                    .name(getUniqueName(Util.nonNullOr(schema.getName(), defaultName)))
-                    .description(schema.getDescription());
-            for (Object value : schema.getEnum()) {
-                gqlEnumBuilder.value(value.toString());
-            }
-            return gqlEnumBuilder.build();
-        }
-
-        return SCHEMA_TO_GRAPHQL_TYPE_MAP.get(schema.getType());
+        this.schemaProvider = new SchemaProvider(openAPI);
+        this.uniqueNameProvider = new UniqueNameProvider();
+        this.graphQlTypeConverter = new GraphQlTypeConverter(openAPI, schemaProvider,
+                uniqueNameProvider);
     }
 
     public GraphQLSchema generateSchema() {
-        populateGraphQlTypes();
+
         GraphQLObjectType.Builder queryTypeBuilder = GraphQLObjectType.newObject()
                 .name("Query");
         boolean mutationAdded = false;
@@ -126,15 +63,17 @@ public class Converter {
                 ) {
                 }
 
-                GraphQLFieldDefinition.Builder fieldBuilder = getGraphqlField(operation,
-                        entry.getKey(), method);
-                if (fieldBuilder == null) {
-                    System.out.println(entry.getKey() + " path could not be converted to graphQl");
-                    continue;
+                if(operation!=null){
+                    GraphQLFieldDefinition.Builder fieldBuilder = getGraphqlField(operation,
+                            entry.getKey(), method);
+                    if (fieldBuilder == null) {
+                        System.out.println(entry.getKey() + " path could not be converted to graphQl");
+                        continue;
+                    }
+                    mutationTypeBuilder = mutationTypeBuilder
+                            .field(fieldBuilder);
+                    mutationAdded = true;
                 }
-                mutationTypeBuilder = mutationTypeBuilder
-                        .field(fieldBuilder);
-                mutationAdded = true;
             }
         }
 
@@ -149,7 +88,7 @@ public class Converter {
     private GraphQLFieldDefinition.Builder getGraphqlField(Operation operation, String path,
                                                            String method) {
         GraphQLFieldDefinition.Builder fieldBuilder = GraphQLFieldDefinition.newFieldDefinition()
-                .name(getUniqueName(getOperationName(operation, path, method)))
+                .name(uniqueNameProvider.getUniqueName(getOperationName(operation, path, method)))
                 .description(Util.nonNullOr(operation.getDescription(), operation.getSummary()));
 
         Schema responseSchema = getResponseSchema(operation);
@@ -157,14 +96,14 @@ public class Converter {
             return null;
         }
 
-        fieldBuilder.type(getGraphQlOutputType(responseSchema));
+        fieldBuilder.type(graphQlTypeConverter.getGraphQlOutputType(responseSchema));
 
         for (Parameter parameter : Util.nonNullOr(operation.getParameters(),
                 new LinkedList<Parameter>())) {
             fieldBuilder.argument(GraphQLArgument.newArgument()
                     .name(parameter.getName())
                     .description(parameter.getDescription())
-                    .type(getGraphQlInputType(parameter.getSchema(), parameter.getName()))
+                    .type(graphQlTypeConverter.getGraphQlInputType(parameter.getSchema(), parameter.getName()))
                     .build());
         }
 
@@ -172,14 +111,14 @@ public class Converter {
             RequestBody requestBody = operation.getRequestBody();
             Schema requestSchema = getRequestSchema(requestBody);
             if (requestSchema == null) return null;
-            requestSchema = getActualSchemaObject(requestSchema);
+            requestSchema = schemaProvider.getActualSchema(requestSchema);
             if (requestSchema.getName() == null) {
                 requestSchema.setName(getOperationName(operation, path, method) + "Input");
             }
             fieldBuilder.argument(GraphQLArgument.newArgument()
-                    .name(requestSchema.getName())
+                    .name("body")
                     .description(requestBody.getDescription())
-                    .type(getGraphQlInputType(requestSchema))
+                    .type(graphQlTypeConverter.getGraphQlInputType(requestSchema))
                     .build());
         }
 
@@ -210,57 +149,6 @@ public class Converter {
 
     private String getOperationName(Operation operation, String path, String method) {
         return operation.getOperationId() != null ? operation.getOperationId() :
-                method + path.replace("/", "_")
-                        .replace("{", "")
-                        .replace("}", "");
+                method + path.replaceAll("\\/|\\{|}|-+", "_");
     }
-
-    private void populateGraphQlTypes() {
-        Map<String, Schema> schemaMap = openAPI.getComponents().getSchemas();
-
-        for (Map.Entry<String, Schema> entry : schemaMap.entrySet()) {
-            if (!graphQlTypes.containsKey(entry.getValue())) {
-                graphQlTypes.put(entry.getValue(), convertToGraphQLObjectType(entry.getKey(),
-                        (ObjectSchema) entry.getValue()));
-            }
-        }
-    }
-
-    private GraphQLObjectType convertToGraphQLObjectType(String name, ObjectSchema objectSchema) {
-        GraphQLObjectType.Builder graphQlObjectTypeBuilder = GraphQLObjectType.newObject()
-                .name(getUniqueName(name))
-                .description(objectSchema.getDescription());
-        Map<String, Schema> schemaMap = objectSchema.getProperties();
-
-        if (schemaMap == null)
-            schemaMap = Collections.emptyMap();
-
-        for (Map.Entry<String, Schema> entry : schemaMap.entrySet()) {
-            Schema schema = entry.getValue();
-            schema.setName(entry.getKey());
-            graphQlObjectTypeBuilder = graphQlObjectTypeBuilder
-                    .field(GraphQLFieldDefinition.newFieldDefinition()
-                            .name(entry.getKey())
-                            .type(getGraphQlOutputType(schema)));
-        }
-
-        return graphQlObjectTypeBuilder.build();
-    }
-
-    private Schema getActualSchemaObject(Schema schema) {
-        if (schema.getType() != null)
-            return schema;
-        String schemaName = schema.get$ref().split("#/components/schemas/")[1];
-        schema = openAPI.getComponents().getSchemas().get(schemaName);
-        schema.setName(schemaName);
-        return schema;
-    }
-
-    private String getUniqueName(String name) {
-        name = Util.nonNullOr(name, "anonymous");
-        int count = uniqueNameRecords.getOrDefault(name, 0);
-        uniqueNameRecords.put(name, count + 1);
-        return name + (count > 0 ? count : "");
-    }
-
 }

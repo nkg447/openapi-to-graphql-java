@@ -1,4 +1,4 @@
-package dev.nikunjgupta;
+package dev.nikunjgupta.provider;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
