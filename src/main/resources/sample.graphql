@@ -1,0 +1,138 @@
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+) on SCALAR
+
+type ApiResponse {
+    code: Int
+    message: String
+    type: String
+}
+
+type Category {
+    id: Int
+    name: String
+}
+
+type Mutation {
+    "Place an order for a pet"
+    placeOrder: Order
+    "uploads an image"
+    uploadFile(
+        "ID of pet to update"
+        petId: Int
+    ): ApiResponse
+}
+
+type Order {
+    complete: Boolean
+    id: Int
+    petId: Int
+    quantity: Int
+    shipDate: String
+    status: status1
+}
+
+type Pet {
+    category: Category
+    id: Int
+    name: String
+    photoUrls: [String]
+    status: status
+    tags: [Tag]
+}
+
+type Query {
+    "Multiple status values can be provided with comma separated strings"
+    findPetsByStatus(
+        "Status values that need to be considered for filter"
+        status: [status2]
+    ): [Pet]
+    "Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing."
+    findPetsByTags(
+        "Tags to filter by"
+        tags: [String]
+    ): [Pet]
+    "Returns a map of status codes to quantities"
+    getInventory: Object
+    "For valid response try integer IDs with value >= 1 and <= 10. Other values will generated exceptions"
+    getOrderById(
+        "ID of pet that needs to be fetched"
+        orderId: Int
+    ): Order
+    "Returns a single pet"
+    getPetById(
+        "ID of pet to return"
+        petId: Int
+    ): Pet
+    "Get user by user name"
+    getUserByName(
+        "The name that needs to be fetched. Use user1 for testing. "
+        username: String
+    ): User
+    "Logs user into the system"
+    loginUser(
+        "The password for login in clear text"
+        password: String,
+        "The user name for login"
+        username: String
+    ): String
+}
+
+type Tag {
+    id: Int
+    name: String
+}
+
+type User {
+    email: String
+    firstName: String
+    id: Int
+    lastName: String
+    password: String
+    phone: String
+    userStatus: Int
+    username: String
+}
+
+"pet status in the store"
+enum status {
+    available
+    pending
+    sold
+}
+
+"Order Status"
+enum status1 {
+    approved
+    delivered
+    placed
+}
+
+enum status2 {
+    available
+    pending
+    sold
+}
+
+"An object scalar"
+scalar Object
