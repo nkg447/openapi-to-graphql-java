@@ -96,7 +96,7 @@ public class Converter {
             return null;
         }
 
-        fieldBuilder.type(graphQlTypeConverter.getGraphQlOutputType(responseSchema));
+        fieldBuilder.type((GraphQLOutputType) graphQlTypeConverter.getGraphQlType(responseSchema));
 
         for (Parameter parameter : Util.nonNullOr(operation.getParameters(),
                 new LinkedList<Parameter>())) {

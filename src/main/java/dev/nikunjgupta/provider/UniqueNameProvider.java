@@ -12,7 +12,7 @@ public class UniqueNameProvider {
     }
 
     public String getUniqueName(String name) {
-        name = Util.nonNullOr(name, "anonymous");
+        name = Util.nonNullOr(name, "Untitled");
         int count = uniqueNameRecords.getOrDefault(name, 0);
         uniqueNameRecords.put(name, count + 1);
         return name + (count > 0 ? count : "");
