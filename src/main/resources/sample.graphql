@@ -35,9 +35,13 @@ type Category {
 
 type Mutation {
     "Place an order for a pet"
-    placeOrder: Order
+    placeOrder(
+        "order placed for purchasing the pet"
+        body: Order1
+    ): Order
     "uploads an image"
     uploadFile(
+        body: uploadFileInput,
         "ID of pet to update"
         petId: Int
     ): ApiResponse
@@ -49,7 +53,7 @@ type Order {
     petId: Int
     quantity: Int
     shipDate: String
-    status: status1
+    status: status2
 }
 
 type Pet {
@@ -65,7 +69,7 @@ type Query {
     "Multiple status values can be provided with comma separated strings"
     findPetsByStatus(
         "Status values that need to be considered for filter"
-        status: [status2]
+        status: [status1]
     ): [Pet]
     "Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing."
     findPetsByTags(
@@ -121,18 +125,39 @@ enum status {
     sold
 }
 
-"Order Status"
 enum status1 {
-    approved
-    delivered
-    placed
-}
-
-enum status2 {
     available
     pending
     sold
 }
 
+"Order Status"
+enum status2 {
+    approved
+    delivered
+    placed
+}
+
+"Order Status"
+enum status3 {
+    approved
+    delivered
+    placed
+}
+
 "An object scalar"
 scalar Object
+
+input Order1 {
+    complete: Boolean
+    id: Int
+    petId: Int
+    quantity: Int
+    shipDate: String
+    status: status3
+}
+
+input uploadFileInput {
+    additionalMetadata: String
+    file: String
+}
