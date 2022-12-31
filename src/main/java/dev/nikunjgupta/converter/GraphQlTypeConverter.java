@@ -2,7 +2,7 @@ package dev.nikunjgupta.converter;
 
 import dev.nikunjgupta.Util;
 import dev.nikunjgupta.provider.SchemaProvider;
-import dev.nikunjgupta.provider.UniqueNameProvider;
+import dev.nikunjgupta.provider.NameProvider;
 import graphql.Scalars;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.*;
@@ -31,13 +31,13 @@ public class GraphQlTypeConverter {
 
     private final OpenAPI openAPI;
     private final SchemaProvider schemaProvider;
-    private final UniqueNameProvider uniqueNameProvider;
+    private final NameProvider nameProvider;
 
     public GraphQlTypeConverter(OpenAPI openAPI, SchemaProvider schemaProvider,
-                                UniqueNameProvider uniqueNameProvider) {
+                                NameProvider nameProvider) {
         this.openAPI = openAPI;
         this.schemaProvider = schemaProvider;
-        this.uniqueNameProvider = uniqueNameProvider;
+        this.nameProvider = nameProvider;
     }
 
     public GraphQLType getGraphQlType(Schema schema) {
@@ -70,7 +70,7 @@ public class GraphQlTypeConverter {
         if (schema.getEnum() != null) {
             if(!graphQlTypes.containsKey(schema)){
                 GraphQLEnumType.Builder gqlEnumBuilder = GraphQLEnumType.newEnum()
-                        .name(uniqueNameProvider.getUniqueName(Util.nonNullOr(schema.getName(),
+                        .name(nameProvider.getUniqueName(Util.nonNullOr(schema.getName(),
                                 defaultName)))
                         .description(schema.getDescription());
                 for (Object value : schema.getEnum()) {
@@ -87,7 +87,7 @@ public class GraphQlTypeConverter {
 
     private GraphQLObjectType convertToGraphQLObjectType(String name, ObjectSchema objectSchema) {
         GraphQLObjectType.Builder graphQlObjectTypeBuilder = GraphQLObjectType.newObject()
-                .name(uniqueNameProvider.getUniqueName(name))
+                .name(nameProvider.getUniqueName(name))
                 .description(objectSchema.getDescription());
         Map<String, Schema> schemaMap = objectSchema.getProperties();
 
@@ -131,7 +131,7 @@ public class GraphQlTypeConverter {
 
         if (schema.getEnum() != null) {
             GraphQLEnumType.Builder gqlEnumBuilder = GraphQLEnumType.newEnum()
-                    .name(uniqueNameProvider.getUniqueName(Util.nonNullOr(schema.getName(),
+                    .name(nameProvider.getUniqueName(Util.nonNullOr(schema.getName(),
                             defaultName)))
                     .description(schema.getDescription());
             for (Object value : schema.getEnum()) {
@@ -147,7 +147,7 @@ public class GraphQlTypeConverter {
                                                              ObjectSchema objectSchema) {
         GraphQLInputObjectType.Builder gqlInputObjectTypeBuilder =
                 GraphQLInputObjectType.newInputObject()
-                .name(uniqueNameProvider.getUniqueName(name))
+                .name(nameProvider.getUniqueName(name))
                 .description(objectSchema.getDescription());
 
         Map<String, Schema> schemaMap = objectSchema.getProperties();

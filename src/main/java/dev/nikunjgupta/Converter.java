@@ -2,7 +2,7 @@ package dev.nikunjgupta;
 
 import dev.nikunjgupta.converter.GraphQlTypeConverter;
 import dev.nikunjgupta.provider.SchemaProvider;
-import dev.nikunjgupta.provider.UniqueNameProvider;
+import dev.nikunjgupta.provider.NameProvider;
 import graphql.schema.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -20,15 +20,15 @@ import java.util.Map;
 public class Converter {
     private final OpenAPI openAPI;
     private final SchemaProvider schemaProvider;
-    private final UniqueNameProvider uniqueNameProvider;
+    private final NameProvider nameProvider;
     private final GraphQlTypeConverter graphQlTypeConverter;
 
     public Converter(OpenAPI openAPI) {
         this.openAPI = openAPI;
         this.schemaProvider = new SchemaProvider(openAPI);
-        this.uniqueNameProvider = new UniqueNameProvider();
+        this.nameProvider = new NameProvider();
         this.graphQlTypeConverter = new GraphQlTypeConverter(openAPI, schemaProvider,
-                uniqueNameProvider);
+                nameProvider);
     }
 
     public GraphQLSchema generateSchema() {
@@ -88,7 +88,7 @@ public class Converter {
     private GraphQLFieldDefinition.Builder getGraphqlField(Operation operation, String path,
                                                            String method) {
         GraphQLFieldDefinition.Builder fieldBuilder = GraphQLFieldDefinition.newFieldDefinition()
-                .name(uniqueNameProvider.getUniqueName(getOperationName(operation, path, method)))
+                .name(nameProvider.getUniqueName(nameProvider.getOperationName(operation, path, method)))
                 .description(Util.nonNullOr(operation.getDescription(), operation.getSummary()));
 
         Schema responseSchema = getResponseSchema(operation);
@@ -113,7 +113,7 @@ public class Converter {
             if (requestSchema == null) return null;
             requestSchema = schemaProvider.getActualSchema(requestSchema);
             if (requestSchema.getName() == null) {
-                requestSchema.setName(getOperationName(operation, path, method) + "Input");
+                requestSchema.setName(nameProvider.getOperationName(operation, path, method) + "Input");
             }
             fieldBuilder.argument(GraphQLArgument.newArgument()
                     .name("body")
@@ -145,10 +145,5 @@ public class Converter {
             return null;
         return responseContent.entrySet().stream().findFirst()
                 .get().getValue().getSchema();
-    }
-
-    private String getOperationName(Operation operation, String path, String method) {
-        return operation.getOperationId() != null ? operation.getOperationId() :
-                method + path.replaceAll("\\/|\\{|}|-+", "_");
     }
 }
