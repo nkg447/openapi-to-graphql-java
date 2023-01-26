@@ -6,10 +6,19 @@ import io.swagger.v3.oas.models.Operation;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Provides Name related stuff
+ * Singleton
+ */
 public class NameProvider {
     private final Map<String, Integer> uniqueNameRecords = new HashMap<>();
+    private static final NameProvider INSTANCE = new NameProvider();
 
-    public NameProvider() {
+    private NameProvider() {
+    }
+
+    public static NameProvider getInstance() {
+        return INSTANCE;
     }
 
     public String getUniqueName(String name) {

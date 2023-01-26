@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,18 +45,21 @@ public class GraphQlTypeConverter {
         return getGraphQlType(schema, null);
     }
 
-    public GraphQLType getGraphQlType(Schema schema, String defaultName) {
+    public GraphQLType getGraphQlType(@NotNull Schema schema, String defaultName) {
+        // schema is a ref - get actual schema object from the reference
         if (schema.getType() == null && schema.get$ref() != null) {
-            // get actual schema object from the reference
             schema = schemaProvider.getActualSchema(schema);
             return getGraphQlType(schema, defaultName);
         }
+        // schema is a array type - get array type schema object and create GraphQLList
         if (schema.getType().equals("array")) {
             ArraySchema arraySchema = (ArraySchema) schema;
             Schema arrayItemSchema = arraySchema.getItems();
             GraphQLType arrayItemGraphQlType = getGraphQlType(arrayItemSchema, defaultName);
             return GraphQLList.list(arrayItemGraphQlType);
         }
+        // schema is a object type - if ObjectSchema then convert it to GraphQlObjectType
+        // else it's a Object Scalar
         if (schema.getType().equals("object")) {
             if (!graphQlTypes.containsKey(schema)) {
                 if (schema instanceof ObjectSchema)
@@ -67,6 +71,7 @@ public class GraphQlTypeConverter {
             return graphQlTypes.get(schema);
         }
 
+        // schema is a enum type
         if (schema.getEnum() != null) {
             if(!graphQlTypes.containsKey(schema)){
                 GraphQLEnumType.Builder gqlEnumBuilder = GraphQLEnumType.newEnum()
@@ -82,10 +87,17 @@ public class GraphQlTypeConverter {
             return graphQlTypes.get(schema);
         }
 
+        // scalar type
         return SCHEMA_TO_GRAPHQL_TYPE_MAP.get(schema.getType());
     }
 
-    private GraphQLObjectType convertToGraphQLObjectType(String name, ObjectSchema objectSchema) {
+    /**
+     * Converts ObjectSchema to a GraphQlObjectType
+     * @param name GraphQlObjectType's name
+     * @param objectSchema ObjectSchema to convert to GraphQlObjectType
+     * @return GraphQLObjectType for the provided ObjectSchema
+     */
+    private GraphQLObjectType convertToGraphQLObjectType(String name, @NotNull ObjectSchema objectSchema) {
         GraphQLObjectType.Builder graphQlObjectTypeBuilder = GraphQLObjectType.newObject()
                 .name(nameProvider.getUniqueName(name))
                 .description(objectSchema.getDescription());
@@ -106,7 +118,7 @@ public class GraphQlTypeConverter {
         return graphQlObjectTypeBuilder.build();
     }
 
-    public GraphQLInputType getGraphQlInputType(Schema schema, String defaultName) {
+    public GraphQLInputType getGraphQlInputType(@NotNull Schema schema, String defaultName) {
         if (schema.getType() == null && schema.get$ref() != null) {
             // get actual schema object from the reference
             schema = schemaProvider.getActualSchema(schema);
@@ -144,7 +156,7 @@ public class GraphQlTypeConverter {
     }
 
     private GraphQLInputType convertToGraphQLInputObjectType(String name,
-                                                             ObjectSchema objectSchema) {
+                                                             @NotNull ObjectSchema objectSchema) {
         GraphQLInputObjectType.Builder gqlInputObjectTypeBuilder =
                 GraphQLInputObjectType.newInputObject()
                 .name(nameProvider.getUniqueName(name))
@@ -167,7 +179,7 @@ public class GraphQlTypeConverter {
         return gqlInputObjectTypeBuilder.build();
     }
 
-    public GraphQLInputType getGraphQlInputType(Schema schema) {
+    public GraphQLInputType getGraphQlInputType(Schema<?> schema) {
         return getGraphQlInputType(schema, null);
     }
 }

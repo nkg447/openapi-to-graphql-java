@@ -1,0 +1,174 @@
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+) on SCALAR
+
+type Album {
+    id: Int
+    title: String
+    userId: Int
+}
+
+type Comment {
+    body: String
+    email: String
+    id: Int
+    name: String
+    postId: Int
+}
+
+type Photo {
+    albumId: Int
+    id: Int
+    thumbnailUrl: String
+    title: String
+    url: String
+}
+
+type Post {
+    body: String
+    id: Int
+    title: String
+    userId: Int
+}
+
+type Query {
+    "Get all available albums"
+    getAlbums(
+        "Filter by album ID"
+        id: Int,
+        "Filter by user ID"
+        userId: Int
+    ): [Album]
+    "Get specific comment"
+    getComment(
+        "The ID of the comment to retrieve"
+        id: Int
+    ): Comment
+    "Get all available comments"
+    getComments(
+        "Filter by comment ID"
+        id: Int,
+        "Filter by post ID"
+        postId: Int
+    ): [Comment]
+    "Get specific photo"
+    getPhoto(
+        "The ID of the photo to retrieve"
+        id: Int
+    ): Photo
+    "Get all available photos"
+    getPhotos(
+        "Filter by album ID"
+        albumId: Int,
+        "Filter by photo ID"
+        id: Int
+    ): [Photo]
+    "Get all available posts"
+    getPosts(
+        "Filter by post ID"
+        id: Int,
+        "Filter by user ID"
+        userId: Int
+    ): [Post]
+    "Get specific todo"
+    getTodo(
+        "The ID of the todo to retrieve"
+        id: Int
+    ): Todo
+    "Get all available todos"
+    getTodos(
+        "Filter by todo ID"
+        id: Int,
+        "Filter by user ID"
+        userId: Int
+    ): [Todo]
+    "Get specific user"
+    getUser(
+        "The ID of the user to retrieve"
+        id: Int
+    ): User1
+    "Get all available users"
+    getUsers(
+        "Filter by user email address"
+        email: Int,
+        "Filter by user ID"
+        id: Int
+    ): [User1]
+    "Get specific album"
+    get_albums__id_(
+        "The ID of the album to retrieve"
+        id: Int
+    ): Album
+    "Get photos for a specific album"
+    get_albums__id__photos(
+        "post id"
+        id: Int
+    ): [Photo]
+    "Get specific post"
+    get_posts__id_(
+        "The ID of the post to retrieve"
+        id: Int
+    ): Post
+    "Get comments for a specific post"
+    get_posts__id__comments(
+        "post id"
+        id: Int
+    ): [Comment]
+}
+
+type Todo {
+    completed: Boolean
+    id: Int
+    title: String
+    userId: Int
+}
+
+type User1 {
+    address: address
+    company: company
+    email: String
+    id: Int
+    name: String
+    phone: String
+    username: String
+    website: String
+}
+
+type address {
+    city: String
+    geo: geo
+    street: String
+    suite: String
+    zipcode: String
+}
+
+type company {
+    bs: String
+    catchPhrase: String
+    name: String
+}
+
+type geo {
+    lat: String
+    lng: String
+}

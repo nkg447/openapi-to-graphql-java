@@ -16,17 +16,19 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import java.util.LinkedList;
 import java.util.Map;
 
-
-public class Converter {
+/**
+ * Actual Converter for openapi to graphql schema conversion
+ */
+public class OpenApiToGraphQlSchemaConverter {
     private final OpenAPI openAPI;
     private final SchemaProvider schemaProvider;
     private final NameProvider nameProvider;
     private final GraphQlTypeConverter graphQlTypeConverter;
 
-    public Converter(OpenAPI openAPI) {
+    public OpenApiToGraphQlSchemaConverter(OpenAPI openAPI) {
         this.openAPI = openAPI;
-        this.schemaProvider = new SchemaProvider(openAPI);
-        this.nameProvider = new NameProvider();
+        this.schemaProvider = SchemaProvider.getOrCreateSchemaProvider(openAPI);
+        this.nameProvider = NameProvider.getInstance();
         this.graphQlTypeConverter = new GraphQlTypeConverter(openAPI, schemaProvider,
                 nameProvider);
     }

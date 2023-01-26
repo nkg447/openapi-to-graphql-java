@@ -1,0 +1,192 @@
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+) on SCALAR
+
+type AlertResponse {
+    alertId: Int
+    alertNotificationEndpoints: [Int]
+    description: String
+    filter: String
+    groupByAggregationFields: [String]
+    isEnabled: Boolean
+    lastUpdated: String
+    lastUpdatedBy: String
+    notificationEmails: [String]
+    operation: operation
+    query_string: String
+    searchTimeFrameMinutes: Int
+    severityThresholdTiers: [SeverityThresholdTier]
+    suppressNotificationsMinutes: Int
+    tags: [String]
+    title: String
+    valueAggregationField: String
+    valueAggregationType: valueAggregationType
+}
+
+type Mutation {
+    "Create an alert"
+    post_alerts(body: AlertRequest): AlertResponse
+    "Get filtered triggered alerts"
+    post_alerts_triggered_alerts(body: TriggeredAlertsRequest): PageResponseTriggeredAlert
+    "Update an alert"
+    put_alerts__alertId_(alertId: Int, body: AlertRequest): AlertResponse
+}
+
+type NotificationEndpointResponse {
+    createdDate: String
+    description: String
+    id: Int
+    modifiedDate: String
+    title: String
+    type: String
+}
+
+type PageResponseTriggeredAlert {
+    from: Int
+    pageSize: Int
+    results: [TriggeredAlert]
+    total: Int
+}
+
+type Query {
+    "Get all alerts"
+    get_alerts: [AlertResponse]
+    "Get an alert"
+    get_alerts__alertId_(alertId: Int): AlertResponse
+    "Get all of the account notification endpoints"
+    get_alerts_notification_endpoints: [NotificationEndpointResponse]
+}
+
+type SeverityThresholdTier {
+    severity: severity
+    threshold: Float
+}
+
+type TriggeredAlert {
+    alertId: Int
+    eventDate: Int
+    name: String
+    severities: severity
+}
+
+enum Untitled {
+    HIGH
+    INFO
+    LOW
+    MEDIUM
+    SEVERE
+}
+
+enum operation {
+    EQUALS
+    GREATER_THAN
+    GREATER_THAN_OR_EQUALS
+    LESS_THAN
+    LESS_THAN_OR_EQUALS
+    NOT_EQUALS
+}
+
+enum operation1 {
+    EQUALS
+    GREATER_THAN
+    GREATER_THAN_OR_EQUALS
+    LESS_THAN
+    LESS_THAN_OR_EQUALS
+    NOT_EQUALS
+}
+
+enum severity {
+    HIGH
+    INFO
+    LOW
+    MEDIUM
+    SEVERE
+}
+
+enum severity1 {
+    HIGH
+    INFO
+    LOW
+    MEDIUM
+    SEVERE
+}
+
+enum sortBy {
+    DATE
+    SEVERITY
+}
+
+enum sortOrder {
+    ASC
+    DESC
+}
+
+enum valueAggregationType {
+    AVG
+    COUNT
+    MAX
+    MIN
+    NONE
+    SUM
+}
+
+enum valueAggregationType1 {
+    AVG
+    COUNT
+    MAX
+    MIN
+    NONE
+    SUM
+}
+
+input AlertRequest {
+    alertNotificationEndpoints: [Int]
+    description: String
+    filter: String
+    groupByAggregationFields: [String]
+    isEnabled: Boolean
+    notificationEmails: [String]
+    operation: operation1
+    query_string: String
+    searchTimeFrameMinutes: Int
+    severityThresholdTiers: [SeverityThresholdTier1]
+    suppressNotificationsMinutes: Int
+    tags: [String]
+    title: String
+    valueAggregationField: String
+    valueAggregationType: valueAggregationType1
+}
+
+input SeverityThresholdTier1 {
+    severity: severity1
+    threshold: Float
+}
+
+input TriggeredAlertsRequest {
+    from: Int
+    search: String
+    severities: [Untitled]
+    size: Int
+    sortBy: sortBy
+    sortOrder: sortOrder
+}

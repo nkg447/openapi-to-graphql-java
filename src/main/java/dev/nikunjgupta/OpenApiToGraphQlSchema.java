@@ -1,7 +1,6 @@
 package dev.nikunjgupta;
 
 import graphql.schema.GraphQLSchema;
-import graphql.schema.idl.SchemaPrinter;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
@@ -12,7 +11,7 @@ public class OpenApiToGraphQlSchema {
         SwaggerParseResult result = new OpenAPIParser().readLocation(openApiUri, null, null);
 
         OpenAPI openAPI = result.getOpenAPI();
-        GraphQLSchema graphQLSchema = new Converter(openAPI).generateSchema();
+        GraphQLSchema graphQLSchema = new OpenApiToGraphQlSchemaConverter(openAPI).generateSchema();
         return graphQLSchema;
     }
 
