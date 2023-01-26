@@ -4,6 +4,7 @@ import dev.nikunjgupta.converter.GraphQlTypeConverter;
 import dev.nikunjgupta.provider.NameProvider;
 import dev.nikunjgupta.provider.SchemaProvider;
 import graphql.schema.*;
+import io.swagger.models.HttpMethod;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -25,6 +26,9 @@ public class OpenApiToGraphQlSchemaConverter {
     private final NameProvider nameProvider;
     private final GraphQlTypeConverter graphQlTypeConverter;
 
+    /**
+     * C'tor
+     */
     public OpenApiToGraphQlSchemaConverter(OpenAPI openAPI) {
         this.openAPI = openAPI;
         this.schemaProvider = SchemaProvider.getOrCreateSchemaProvider(openAPI);
@@ -33,6 +37,11 @@ public class OpenApiToGraphQlSchemaConverter {
                 nameProvider);
     }
 
+    /**
+     * Generate GraphQlSchema
+     *
+     * @return GraphQlSchema object
+     */
     public GraphQLSchema generateSchema() {
 
         GraphQLObjectType.Builder queryTypeBuilder = GraphQLObjectType.newObject()
@@ -45,32 +54,33 @@ public class OpenApiToGraphQlSchemaConverter {
             PathItem pathItem = entry.getValue();
             String method = "";
             Operation operation = null;
-            if ((pathItem.getGet() != null && (method = "get") != null && (operation =
+            if ((pathItem.getGet() != null && (operation =
                     pathItem.getGet()) != null)) {
-                GraphQLFieldDefinition.Builder fieldBuilder = getGraphqlField(operation,
-                        entry.getKey(), "get");
+                GraphQLFieldDefinition.Builder fieldBuilder =
+                        createGraphQLFieldDefinition(operation,
+                                entry.getKey(), HttpMethod.GET);
                 if (fieldBuilder == null) {
-                    System.out.println(method + " " + entry.getKey() + " path could not be " +
+                    System.out.println("GET " + entry.getKey() + " path could not be " +
                             "converted to graphQl");
                 } else {
                     queryTypeBuilder = queryTypeBuilder
                             .field(fieldBuilder);
                 }
             }
-            if ((pathItem.getPost() != null && (method = "post") != null && (operation =
+            if ((pathItem.getPost() != null && (operation =
                     pathItem.getPost()) != null)) {
                 mutationAdded = addOperationToMutation(mutationTypeBuilder,
-                        operation, method, entry.getKey()) || mutationAdded;
+                        operation, HttpMethod.POST, entry.getKey()) || mutationAdded;
             }
-            if ((pathItem.getPut() != null && (method = "put") != null && (operation =
+            if ((pathItem.getPut() != null && (operation =
                     pathItem.getPut()) != null)) {
                 mutationAdded = addOperationToMutation(mutationTypeBuilder,
-                        operation, method, entry.getKey()) || mutationAdded;
+                        operation, HttpMethod.PUT, entry.getKey()) || mutationAdded;
             }
-            if ((pathItem.getPatch() != null && (method = "patch") != null && (operation =
+            if ((pathItem.getPatch() != null && (operation =
                     pathItem.getPatch()) != null)) {
                 mutationAdded = addOperationToMutation(mutationTypeBuilder,
-                        operation, method, entry.getKey()) || mutationAdded;
+                        operation, HttpMethod.PATCH, entry.getKey()) || mutationAdded;
             }
         }
 
@@ -82,9 +92,18 @@ public class OpenApiToGraphQlSchemaConverter {
         return schemaBuilder.build();
     }
 
+    /**
+     * creates and adds a fieldDefinition to mutationTypeBuilder
+     *
+     * @param mutationTypeBuilder GraphQLObjectType.Builder for mutation
+     * @param operation           operation object from OpenApi
+     * @param method              http method
+     * @param path                endpoint path
+     * @return true if successfully added a fieldDefinition to mutationTypeBuilder
+     */
     private boolean addOperationToMutation(GraphQLObjectType.Builder mutationTypeBuilder,
-                                           Operation operation, String method, String path) {
-        GraphQLFieldDefinition.Builder fieldBuilder = getGraphqlField(operation,
+                                           Operation operation, HttpMethod method, String path) {
+        GraphQLFieldDefinition.Builder fieldBuilder = createGraphQLFieldDefinition(operation,
                 path, method);
         if (fieldBuilder == null) {
             System.out.println(method + " " + path + " path could not be converted to graphQl");
@@ -95,8 +114,17 @@ public class OpenApiToGraphQlSchemaConverter {
         return true;
     }
 
-    private GraphQLFieldDefinition.Builder getGraphqlField(Operation operation, String path,
-                                                           String method) {
+    /**
+     * Create a graphql field from an openApi Operation object
+     *
+     * @param operation operation object from OpenApi
+     * @param path      endpoint path
+     * @param method    http method
+     * @return GraphQLFieldDefinition.Builder
+     */
+    private GraphQLFieldDefinition.Builder createGraphQLFieldDefinition(Operation operation,
+                                                                        String path,
+                                                                        HttpMethod method) {
         GraphQLFieldDefinition.Builder fieldBuilder = GraphQLFieldDefinition.newFieldDefinition()
                 .name(nameProvider.getUniqueName(nameProvider.getOperationName(operation, path,
                         method)))
@@ -138,7 +166,11 @@ public class OpenApiToGraphQlSchemaConverter {
         return fieldBuilder;
     }
 
+    /**
+     * @return Schema object from a RequestBody of an Operation of openApi
+     */
     private Schema getRequestSchema(RequestBody requestBody) {
+        // TODO: union of 2 request type is possible - handle that
         Content requestContent = requestBody.getContent();
         if (requestContent.size() == 0)
             return null;
@@ -146,9 +178,13 @@ public class OpenApiToGraphQlSchemaConverter {
                 .get().getValue().getSchema();
     }
 
+    /**
+     * @return Schema object Response of an Operation of openApi
+     */
     private Schema getResponseSchema(Operation operation) {
         // fetched the responseSchema
         // TODO: better logic
+        // TODO: union of 2 response is possible - handle that
         Map<String, ApiResponse> responseMap = operation.getResponses();
         if (responseMap.size() == 0)
             return null;

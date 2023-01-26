@@ -106,14 +106,14 @@ type Query {
     getUser(
         "The ID of the user to retrieve"
         id: Int
-    ): User1
+    ): User
     "Get all available users"
     getUsers(
         "Filter by user email address"
         email: Int,
         "Filter by user ID"
         id: Int
-    ): [User1]
+    ): [User]
     "Get specific album"
     get_albums__id_(
         "The ID of the album to retrieve"
@@ -143,7 +143,7 @@ type Todo {
     userId: Int
 }
 
-type User1 {
+type User {
     address: address
     company: company
     email: String

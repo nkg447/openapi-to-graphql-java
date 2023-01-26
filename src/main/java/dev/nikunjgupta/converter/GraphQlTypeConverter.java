@@ -27,18 +27,19 @@ public class GraphQlTypeConverter {
         SCHEMA_TO_GRAPHQL_TYPE_MAP.put("boolean", Scalars.GraphQLBoolean);
     }
 
-    private final Map<Schema, GraphQLInputType> graphQlInputTypes = new HashMap<>();
-    private final Map<Schema, GraphQLOutputType> graphQlTypes = new HashMap<>();
-
     private final OpenAPI openAPI;
     private final SchemaProvider schemaProvider;
     private final NameProvider nameProvider;
+    private final GraphQlTypeStore<Schema, GraphQLInputType> graphQlInputTypes;
+    private final GraphQlTypeStore<Schema, GraphQLOutputType> graphQlTypes;
 
     public GraphQlTypeConverter(OpenAPI openAPI, SchemaProvider schemaProvider,
                                 NameProvider nameProvider) {
         this.openAPI = openAPI;
         this.schemaProvider = schemaProvider;
         this.nameProvider = nameProvider;
+        this.graphQlInputTypes = new GraphQlTypeStore<>();
+        this.graphQlTypes = new GraphQlTypeStore<>();
     }
 
     public GraphQLType getGraphQlType(Schema schema) {
@@ -73,7 +74,7 @@ public class GraphQlTypeConverter {
 
         // schema is a enum type
         if (schema.getEnum() != null) {
-            if(!graphQlTypes.containsKey(schema)){
+            if (!graphQlTypes.containsKey(schema)) {
                 GraphQLEnumType.Builder gqlEnumBuilder = GraphQLEnumType.newEnum()
                         .name(nameProvider.getUniqueName(Util.nonNullOr(schema.getName(),
                                 defaultName)))
@@ -93,11 +94,13 @@ public class GraphQlTypeConverter {
 
     /**
      * Converts ObjectSchema to a GraphQlObjectType
-     * @param name GraphQlObjectType's name
+     *
+     * @param name         GraphQlObjectType's name
      * @param objectSchema ObjectSchema to convert to GraphQlObjectType
      * @return GraphQLObjectType for the provided ObjectSchema
      */
-    private GraphQLObjectType convertToGraphQLObjectType(String name, @NotNull ObjectSchema objectSchema) {
+    private GraphQLObjectType convertToGraphQLObjectType(String name,
+                                                         @NotNull ObjectSchema objectSchema) {
         GraphQLObjectType.Builder graphQlObjectTypeBuilder = GraphQLObjectType.newObject()
                 .name(nameProvider.getUniqueName(name))
                 .description(objectSchema.getDescription());
@@ -142,14 +145,18 @@ public class GraphQlTypeConverter {
         }
 
         if (schema.getEnum() != null) {
-            GraphQLEnumType.Builder gqlEnumBuilder = GraphQLEnumType.newEnum()
-                    .name(nameProvider.getUniqueName(Util.nonNullOr(schema.getName(),
-                            defaultName)))
-                    .description(schema.getDescription());
-            for (Object value : schema.getEnum()) {
-                gqlEnumBuilder.value(value.toString());
+            if (!graphQlTypes.containsKey(schema)) {
+                GraphQLEnumType.Builder gqlEnumBuilder = GraphQLEnumType.newEnum()
+                        .name(nameProvider.getUniqueName(Util.nonNullOr(schema.getName(),
+                                defaultName)))
+                        .description(schema.getDescription());
+                for (Object value : schema.getEnum()) {
+                    gqlEnumBuilder.value(value.toString());
+                }
+                graphQlTypes.put(schema, gqlEnumBuilder.build());
             }
-            return gqlEnumBuilder.build();
+
+            return (GraphQLEnumType)graphQlTypes.get(schema);
         }
 
         return (GraphQLInputType) SCHEMA_TO_GRAPHQL_TYPE_MAP.get(schema.getType());
@@ -159,8 +166,8 @@ public class GraphQlTypeConverter {
                                                              @NotNull ObjectSchema objectSchema) {
         GraphQLInputObjectType.Builder gqlInputObjectTypeBuilder =
                 GraphQLInputObjectType.newInputObject()
-                .name(nameProvider.getUniqueName(name))
-                .description(objectSchema.getDescription());
+                        .name(nameProvider.getUniqueName(name))
+                        .description(objectSchema.getDescription());
 
         Map<String, Schema> schemaMap = objectSchema.getProperties();
 

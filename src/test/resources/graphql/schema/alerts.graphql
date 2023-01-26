@@ -89,14 +89,6 @@ type TriggeredAlert {
     severities: severity
 }
 
-enum Untitled {
-    HIGH
-    INFO
-    LOW
-    MEDIUM
-    SEVERE
-}
-
 enum operation {
     EQUALS
     GREATER_THAN
@@ -106,24 +98,7 @@ enum operation {
     NOT_EQUALS
 }
 
-enum operation1 {
-    EQUALS
-    GREATER_THAN
-    GREATER_THAN_OR_EQUALS
-    LESS_THAN
-    LESS_THAN_OR_EQUALS
-    NOT_EQUALS
-}
-
 enum severity {
-    HIGH
-    INFO
-    LOW
-    MEDIUM
-    SEVERE
-}
-
-enum severity1 {
     HIGH
     INFO
     LOW
@@ -150,15 +125,6 @@ enum valueAggregationType {
     SUM
 }
 
-enum valueAggregationType1 {
-    AVG
-    COUNT
-    MAX
-    MIN
-    NONE
-    SUM
-}
-
 input AlertRequest {
     alertNotificationEndpoints: [Int]
     description: String
@@ -166,7 +132,7 @@ input AlertRequest {
     groupByAggregationFields: [String]
     isEnabled: Boolean
     notificationEmails: [String]
-    operation: operation1
+    operation: operation
     query_string: String
     searchTimeFrameMinutes: Int
     severityThresholdTiers: [SeverityThresholdTier1]
@@ -174,18 +140,18 @@ input AlertRequest {
     tags: [String]
     title: String
     valueAggregationField: String
-    valueAggregationType: valueAggregationType1
+    valueAggregationType: valueAggregationType
 }
 
 input SeverityThresholdTier1 {
-    severity: severity1
+    severity: severity
     threshold: Float
 }
 
 input TriggeredAlertsRequest {
     from: Int
     search: String
-    severities: [Untitled]
+    severities: [severity]
     size: Int
     sortBy: sortBy
     sortOrder: sortOrder

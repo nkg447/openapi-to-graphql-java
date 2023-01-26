@@ -36,7 +36,8 @@ public class OpenApiToGraphQlSchemaConverterTest {
             String[] printedSchema = schemaPrinter.print(schema).split("\n");
             List<String> expectedSchema = Files.readAllLines(new File(graphqlSchemaPath).toPath());
             for (int i = 0; i < printedSchema.length; i++) {
-                assertEquals(expectedSchema.get(i).trim(), printedSchema[i].trim());
+                assertEquals("Did not match - " + scenario[0], expectedSchema.get(i).trim(),
+                        printedSchema[i].trim());
             }
 
         }

@@ -53,7 +53,7 @@ type Order {
     petId: Int
     quantity: Int
     shipDate: String
-    status: status2
+    status: status1
 }
 
 type Pet {
@@ -69,7 +69,7 @@ type Query {
     "Multiple status values can be provided with comma separated strings"
     findPetsByStatus(
         "Status values that need to be considered for filter"
-        status: [status1]
+        status: [status]
     ): [Pet]
     "Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing."
     findPetsByTags(
@@ -125,21 +125,8 @@ enum status {
     sold
 }
 
+"Order Status"
 enum status1 {
-    available
-    pending
-    sold
-}
-
-"Order Status"
-enum status2 {
-    approved
-    delivered
-    placed
-}
-
-"Order Status"
-enum status3 {
     approved
     delivered
     placed
@@ -154,7 +141,7 @@ input Order1 {
     petId: Int
     quantity: Int
     shipDate: String
-    status: status3
+    status: status1
 }
 
 input uploadFileInput {
